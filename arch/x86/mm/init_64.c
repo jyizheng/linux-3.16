@@ -1059,6 +1059,10 @@ void __init mem_init(void)
 			 PAGE_SIZE, KCORE_OTHER);
 
 	mem_init_print_info(NULL);
+
+#ifdef CONFIG_PRINT_BUDDY_FREELIST
+	print_buddy_freelist();
+#endif
 }
 
 #ifdef CONFIG_DEBUG_RODATA

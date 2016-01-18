@@ -67,6 +67,39 @@
 #include <asm/div64.h>
 #include "internal.h"
 
+#ifdef CONFIG_PRINT_BUDDY_FREELIST
+void print_buddy_freelist(void)
+{
+	struct zone *zone;
+	unsigned int order, t;
+	struct list_head *curr;
+	unsigned long pfn;
+	int i = 0;
+	struct page *page;
+
+	for_each_zone(zone) {
+		printk(KERN_INFO "I am zone %s %lu\n", zone->name, zone->present_pages);
+		if (zone->present_pages == 0)
+			goto out;
+	
+		for_each_migratetype_order(order, t) {
+			list_for_each(curr, &zone->free_area[order].free_list[t]) {
+				page = list_entry(curr, struct page, lru);
+				if (!page)
+					continue;
+				pfn = page_to_pfn(page);
+				printk(KERN_INFO "%lu %u %u %d\n",pfn, order, t, i);
+				i++;
+			}
+		}
+	}
+out:
+	printk(KERN_INFO "Totoal free page: %d\n", i);
+}
+
+EXPORT_SYMBOL(print_buddy_freelist);
+#endif
+
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
 #define MIN_PERCPU_PAGELIST_FRACTION	(8)

@@ -1760,7 +1760,9 @@ int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
 			return -EINVAL;
 		vma->vm_pgoff = pfn;
 	}
-
+#ifdef CONFIG_DEBUG_REMAP_PFN_RANGE
+	printk(KERN_INFO "remap_pfn_range: pfn is 0x%lx %s\n", pfn, current->comm);
+#endif
 	err = track_pfn_remap(vma, &prot, pfn, addr, PAGE_ALIGN(size));
 	if (err)
 		return -EINVAL;

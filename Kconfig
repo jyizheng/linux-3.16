@@ -12,6 +12,17 @@ menu "PASR Project"
 config PASR_HYPERCALL
         bool "For PASR hyper call"
         default n
+
+#config FORCE_MAX_ZONEORDER
+#	int "MAX_ZONEORDER"
+#	default 15
+config DEBUG_REMAP_PFN_RANGE
+	bool "debug remap_pfn_range()"
+	default y
+
+config PRINT_BUDDY_FREELIST
+	bool "print the free list"
+	default y
 endmenu
 
 source "arch/$SRCARCH/Kconfig"
