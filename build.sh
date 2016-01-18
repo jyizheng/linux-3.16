@@ -1,1 +1,1 @@
-sudo fakeroot make-kpkg --append-to-version=mem-detect --initrd kernel_image 
+sudo fakeroot make-kpkg --append-to-version=page-alloc --initrd kernel_image 
