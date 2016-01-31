@@ -1310,7 +1310,7 @@ static void clear_vm_uninitialized_flag(struct vm_struct *vm)
 	vm->flags &= ~VM_UNINITIALIZED;
 }
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VMALLOC)
 static void vmalloc_alloc_domain(struct vm_struct *area)
 {
 	struct mm_domain *dom;
@@ -1345,7 +1345,7 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 	if (unlikely(!area))
 		return NULL;
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VMALLOC)
 	vmalloc_alloc_domain(area);
 #endif
 
@@ -1610,7 +1610,7 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 	for (i = 0; i < area->nr_pages; i++) {
 		struct page *page;
 		gfp_t tmp_mask = gfp_mask | __GFP_NOWARN;
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VMALLOC)
 		if (node == NUMA_NO_NODE)
 			page = alloc_page_vmalloc(tmp_mask);
 		else

@@ -27,6 +27,14 @@
 /* bit 31 and 30 is used for zone, see mm.h */
 #define MM_PAGE_ZONE_MASK	0xc0000000
 
+int sysctl_compact_vm;
+
+int compact_vm_sysctl_handler(ctl_table *table, int write,
+	void __user *buffer, size_t *length, loff_t *ppos)
+{
+	return 0;
+}
+
 static inline bool is_region_free_page(struct page *page)
 {
 	unsigned long reg = (unsigned long)page->reg;
@@ -34,6 +42,7 @@ static inline bool is_region_free_page(struct page *page)
 	return (reg & MM_REGION_PAGE_FLAG) ? true : false;
 }
 
+#if 0
 static inline void unmap_file_region(struct mm_region *reg)
 {
 	struct page *head = reg->head;
@@ -65,6 +74,11 @@ static inline void unmap_file_region(struct mm_region *reg)
 	}
 }
 
+static inline void unmap_file_region(struct mm_region *reg)
+{
+	return;
+}
+
 static void print_mm_region_free(struct mm_region *reg)
 {
 	pr_info("freesize:%d\n", reg->freesize);
@@ -75,6 +89,7 @@ static void print_mm_region_free(struct mm_region *reg)
 	else 
 		unmap_file_region(reg);
 }
+#endif
 
 static bool free_pages_prepare_mm_opt(struct page *page)
 {
@@ -331,11 +346,6 @@ struct page *alloc_pages_vma_mm_opt(gfp_t gfp_mask, int order,
 	gfp_t old_gfp_mask = gfp_mask;
 	VM_BUG_ON(order != 0);
 	mm = vma->vm_mm;
-	pr_info("task is:%s, oom_score_min:%d, flag:%x, ppid:%d, pid:%d\n",
-			current->comm,
-			current->signal->oom_score_adj_min,
-			current->flags, current->parent->pid,
-			current->pid);
 	dom = mm->vmdomain;
 	gfp_mask |= __GFP_VM_PAGE;
 
@@ -366,6 +376,8 @@ normal:
 	return page;
 }
 
+#if 0
+#if defined(CONFIG_MM_OPT_FILE)
 /* Hijack page cache allocation */
 struct page *__page_cache_alloc_mm_opt(gfp_t gfp_mask,
 			struct address_space *x)
@@ -414,6 +426,7 @@ struct page *__page_cache_alloc_mm_opt(gfp_t gfp_mask,
 normal:
 	return alloc_pages(old_gfp_mask, 0);
 }
+#endif
 
 struct page *alloc_page_vmalloc(gfp_t gfp)
 {
@@ -502,7 +515,6 @@ static void bank_extent_traverse(struct rb_root *root)
 	}
 }
 
-int sysctl_compact_vm;
 int sysctl_compact_file;
 
 static void bank_rb_init(struct bank *bank, unsigned int start_pfn)
@@ -649,23 +661,6 @@ static void compact_highmem_file_bank(void)
 	}
 }
 
-int compact_vm_sysctl_handler(ctl_table *table, int write,
-	void __user *buffer, size_t *length, loff_t *ppos)
-{
-	int ret;
-
-	ret = proc_dointvec_minmax(table, write, buffer, length, ppos);
-	if (ret)
-		return ret;
-	if (write) {
-		if (sysctl_compact_vm & 1)
-			compact_normal_vm_bank();
-		if (sysctl_compact_vm & 2)
-			compact_highmem_vm_bank();
-	}
-	return 0;
-}
-
 int compact_file_sysctl_handler(ctl_table *table, int write,
 	void __user *buffer, size_t *length, loff_t *ppos)
 {
@@ -682,4 +677,4 @@ int compact_file_sysctl_handler(ctl_table *table, int write,
 	}
 	return 0;
 }
-
+#endif 
