@@ -19,6 +19,10 @@
 #include <linux/bit_spinlock.h>
 #include <linux/shrinker.h>
 
+#ifdef CONFIG_PRINT_BUDDY_FREELIST
+extern void print_buddy_freelist(void);
+#endif
+
 struct mempolicy;
 struct anon_vma;
 struct anon_vma_chain;

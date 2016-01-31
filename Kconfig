@@ -8,4 +8,18 @@ config SRCARCH
 	string
 	option env="SRCARCH"
 
+menu "PASR Project"
+config PRINT_BUDDY_FREELIST
+	bool "print the free list"
+	default n
+
+config FORCE_MAX_ZONEORDER
+	int "MAX_ZONEORDER"
+	default 11
+
+config MM_OPT
+	bool "memory management opt"
+	default n
+endmenu
+
 source "arch/$SRCARCH/Kconfig"
