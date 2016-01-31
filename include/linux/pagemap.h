@@ -239,14 +239,14 @@ static inline struct page *__page_cache_alloc(gfp_t gfp)
 }
 #endif
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 extern struct page *__page_cache_alloc_mm_opt(gfp_t gfp,
 			struct address_space *x);
 #endif
 
 static inline struct page *page_cache_alloc(struct address_space *x)
 {
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 	return __page_cache_alloc_mm_opt(mapping_gfp_mask(x), x);
 #else
 	return __page_cache_alloc(mapping_gfp_mask(x));
@@ -255,7 +255,7 @@ static inline struct page *page_cache_alloc(struct address_space *x)
 
 static inline struct page *page_cache_alloc_cold(struct address_space *x)
 {
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 	return __page_cache_alloc_mm_opt(mapping_gfp_mask(x)|__GFP_COLD, x);
 #else
 	return __page_cache_alloc(mapping_gfp_mask(x)|__GFP_COLD);
@@ -264,7 +264,7 @@ static inline struct page *page_cache_alloc_cold(struct address_space *x)
 
 static inline struct page *page_cache_alloc_readahead(struct address_space *x)
 {
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 	return __page_cache_alloc_mm_opt(mapping_gfp_mask(x) |
 				  __GFP_COLD | __GFP_NORETRY | __GFP_NOWARN, x);
 #else

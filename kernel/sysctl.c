@@ -113,10 +113,14 @@ extern int sysctl_nr_open_min, sysctl_nr_open_max;
 extern int sysctl_nr_trim_pages;
 #endif
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
 extern int sysctl_compact_vm;
+#endif
+
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 extern int sysctl_compact_file;
 #endif
+
 /* Constants used for minimum and  maximum */
 #ifdef CONFIG_LOCKUP_DETECTOR
 static int sixty = 60;
@@ -1298,7 +1302,7 @@ static struct ctl_table vm_table[] = {
 		.extra1		= &one,
 		.extra2		= &four,
 	},
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
 	{
 		.procname	= "compact_vm",
 		.data		= &sysctl_compact_vm,
@@ -1306,6 +1310,8 @@ static struct ctl_table vm_table[] = {
 		.mode		= 0644,
 		.proc_handler	= compact_vm_sysctl_handler,
 	},
+#endif
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 	{
 		.procname	= "compact_file",
 		.data		= &sysctl_compact_file,
@@ -1313,7 +1319,7 @@ static struct ctl_table vm_table[] = {
 		.mode		= 0644,
 		.proc_handler	= compact_file_sysctl_handler,
 	},
-#endif /* MM_OPT */
+#endif
 #ifdef CONFIG_COMPACTION
 	{
 		.procname	= "compact_memory",

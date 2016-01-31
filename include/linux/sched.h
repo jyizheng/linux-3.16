@@ -2379,7 +2379,7 @@ static inline unsigned long sigsp(unsigned long sp, struct ksignal *ksig)
  * Routines for handling mm_structs
  */
 extern struct mm_struct * mm_alloc(void);
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
 extern void mm_alloc_domain(struct mm_struct * mm);
 #endif
 

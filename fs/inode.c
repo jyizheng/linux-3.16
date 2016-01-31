@@ -114,7 +114,7 @@ int proc_nr_inodes(struct ctl_table *table, int write,
 }
 #endif
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 void inode_destroy_domain(struct inode *inode)
 {
 	struct address_space *mapping = &inode->i_data;
@@ -206,7 +206,7 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
 	mapping->private_data = NULL;
 	mapping->backing_dev_info = &default_backing_dev_info;
 	mapping->writeback_index = 0;
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 	inode_alloc_domain(inode);
 #endif
 	/*
@@ -298,7 +298,7 @@ static void destroy_inode(struct inode *inode)
 {
 	BUG_ON(!list_empty(&inode->i_lru));
 	__destroy_inode(inode);
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 	inode_destroy_domain(inode);
 #endif
 	if (inode->i_sb->s_op->destroy_inode)

@@ -46,7 +46,7 @@
 
 #include <asm/mman.h>
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_RX)
 #include <linux/pagemap.h>
 #endif
 
@@ -1856,7 +1856,7 @@ int filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	loff_t size;
 	int ret = 0;
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_RX)
 	if ((vma->vm_flags & VM_EXEC) && (vma->vm_flags & VM_DENYWRITE))
 		set_bit(AS_READONLY, &mapping->flags);
 #endif

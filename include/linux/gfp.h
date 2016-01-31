@@ -359,15 +359,15 @@ extern struct page *alloc_pages_vma(gfp_t gfp_mask, int order,
 #else
 #define alloc_pages(gfp_mask, order) \
 		alloc_pages_node(numa_node_id(), gfp_mask, order)
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
 extern struct page *alloc_pages_vma_mm_opt(gfp_t gfp_mask, int order,
 			struct vm_area_struct *vma, unsigned long addr);
 #define alloc_pages_vma(gfp_mask, order, vma, addr, node)	\
 	alloc_pages_vma_mm_opt(gfp_mask, order, vma, addr)
-#else /* !MM_OPT */
+#else /* !(MM_OPT && MM_OPT_VM) */
 #define alloc_pages_vma(gfp_mask, order, vma, addr, node)	\
 	alloc_pages(gfp_mask, order)
-#endif /* MM_OPT */
+#endif /* MM_OPT && MM_OPT_VM */
 #endif
 
 #define alloc_page(gfp_mask) alloc_pages(gfp_mask, 0)

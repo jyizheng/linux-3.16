@@ -300,7 +300,7 @@ struct page;
 struct address_space;
 struct writeback_control;
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 struct mm_region;
 struct mm_domain;
 extern void inode_alloc_domain(struct inode *inode);
@@ -408,7 +408,7 @@ struct address_space {
 	spinlock_t		private_lock;	/* for use by the address_space */
 	struct list_head	private_list;	/* ditto */
 	void			*private_data;	/* ditto */
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
 	struct mm_domain * file_domain;		/* a domaim associate with a file */
 #endif
 } __attribute__((aligned(sizeof(long))));

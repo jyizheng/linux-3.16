@@ -324,8 +324,8 @@ enum zone_type {
 #ifndef __GENERATING_BOUNDS_H
 
 #ifdef CONFIG_MM_OPT
-#define ZONE_MAX_FILE_BANK	4
-#define ZONE_MAX_VM_BANK	4
+#define ZONE_MAX_FILE_BANK	16
+#define ZONE_MAX_VM_BANK	16
 #include <linux/rbtree.h>
 struct zone;
 struct bank_extent {

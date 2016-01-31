@@ -479,8 +479,8 @@ struct mm_struct {
 #endif
 	struct uprobes_state uprobes_state;
 
-#ifdef CONFIG_MM_OPT
-	struct mm_domain * vmdomain;		/* a domaim associate with the process */
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM) 
+	struct mm_domain * vmdomain;	/* a domaim for the process */
 #endif
 };
 

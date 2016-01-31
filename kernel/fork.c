@@ -527,7 +527,7 @@ static void mm_init_aio(struct mm_struct *mm)
 #endif
 }
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
 void mm_destroy_domain(struct mm_struct *mm)
 {
 	struct mm_domain *dom = mm->vmdomain;
@@ -569,7 +569,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 	spin_lock_init(&mm->page_table_lock);
 	mm_init_aio(mm);
 	mm_init_owner(mm, p);
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
 	mm_alloc_domain(mm);
 #endif
 	clear_tlb_flush_pending(mm);
@@ -636,7 +636,7 @@ void __mmdrop(struct mm_struct *mm)
 	destroy_context(mm);
 	mmu_notifier_mm_destroy(mm);
 	check_mm(mm);
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
 	mm_destroy_domain(mm);
 #endif
 	free_mm(mm);

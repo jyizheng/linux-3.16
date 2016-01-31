@@ -20,6 +20,26 @@ config FORCE_MAX_ZONEORDER
 config MM_OPT
 	bool "memory management opt"
 	default n
+
+config MM_OPT_FILE
+	bool "memory management opt for file cache"
+	default n
+
+config MM_OPT_VM
+	bool "memory management opt for vm"
+	default n
+
+config MM_OPT_VMALLOC
+	bool "memory management opt for vmalloc"
+	default n
+
+config MM_OPT_RX
+	bool "memory management opt for readonly exec file"
+	default n
+
+config MM_OPT_SHMEM
+	bool "memory management opt for shmem"
+	default n
 endmenu
 
 source "arch/$SRCARCH/Kconfig"

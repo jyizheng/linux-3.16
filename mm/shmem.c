@@ -35,7 +35,7 @@
 
 static struct vfsmount *shm_mnt;
 
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_SHMEM)
 #include <linux/pagemap.h>
 #endif
 
@@ -910,7 +910,7 @@ static inline struct page *shmem_swapin(swp_entry_t swap, gfp_t gfp,
 static inline struct page *shmem_alloc_page(gfp_t gfp,
 			struct shmem_inode_info *info, pgoff_t index)
 {
-#ifdef CONFIG_MM_OPT
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_SHMEM)
 	struct address_space *x = (&info->vfs_inode)->i_mapping;
 
 	return __page_cache_alloc_mm_opt(gfp, x);

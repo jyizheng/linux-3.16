@@ -887,31 +887,6 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 	for (order = 0; order < MAX_ORDER; ++order)
 		seq_printf(m, "%6lu ", zone->free_area[order].nr_free);
 	seq_putc(m, '\n');
-#ifdef CONFIG_MM_OPT
-	{
-		int i;
-		for (i = 0; i < zone->nr_file_bank; i++) {
-			if (i == 0)
-				seq_printf(m, "file cache\n");
-
-			seq_printf(m, "%x\n", zone->file_start_pfn[i]);
-			seq_printf(m, "Node %d, zone %8s ", pgdat->node_id, zone->name);
-			for (order = 0; order < MAX_ORDER; ++order)
-				seq_printf(m, "%6lu ", zone->free_bank_file[i].free_area[order].nr_free);
-			seq_putc(m, '\n');
-		}
-		for (i = 0; i < zone->nr_vm_bank; i++) {
-			if (i == 0)
-				seq_printf(m, "vm process\n");
-
-			seq_printf(m, "%x\n", zone->vm_start_pfn[i]);
-			seq_printf(m, "Node %d, zone %8s ", pgdat->node_id, zone->name);
-			for (order = 0; order < MAX_ORDER; ++order)
-				seq_printf(m, "%6lu ", zone->free_bank_vm[i].free_area[order].nr_free);
-			seq_putc(m, '\n');
-		}
-	}
-#endif
 }
 
 /*
