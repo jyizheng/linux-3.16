@@ -300,6 +300,13 @@ struct page;
 struct address_space;
 struct writeback_control;
 
+#ifdef CONFIG_MM_OPT
+struct mm_region;
+struct mm_domain;
+extern void inode_alloc_domain(struct inode *inode);
+extern void inode_destroy_domain(struct inode *inode);
+#endif
+
 /*
  * "descriptor" for what we're up to with a read.
  * This allows us to use the same read code yet
@@ -401,6 +408,9 @@ struct address_space {
 	spinlock_t		private_lock;	/* for use by the address_space */
 	struct list_head	private_list;	/* ditto */
 	void			*private_data;	/* ditto */
+#ifdef CONFIG_MM_OPT
+	struct mm_domain * file_domain;		/* a domaim associate with a file */
+#endif
 } __attribute__((aligned(sizeof(long))));
 	/*
 	 * On most architectures that alignment is already the case; but

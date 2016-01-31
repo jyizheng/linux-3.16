@@ -527,6 +527,36 @@ static void mm_init_aio(struct mm_struct *mm)
 #endif
 }
 
+#ifdef CONFIG_MM_OPT
+void mm_destroy_domain(struct mm_struct *mm)
+{
+	struct mm_domain *dom = mm->vmdomain;
+	struct mm_region *reg, *next;
+
+	if (dom == NULL || dom->size == 0) {
+		kfree(dom);
+		return;	
+	}
+
+	list_for_each_entry_safe(reg, next, &dom->domlist_head, domlist) {
+		if (reg->freesize == reg->index)
+			free_mm_region(reg); 
+	}
+	return;
+}
+
+void mm_alloc_domain(struct mm_struct *mm)
+{
+	BUG_ON(mm == NULL);
+	mm->vmdomain = kmalloc(sizeof(struct mm_domain), GFP_KERNEL);
+	if (mm->vmdomain != NULL) {
+		INIT_LIST_HEAD(&mm->vmdomain->domlist_head);
+		mm->vmdomain->size = 0;
+		mm->vmdomain->cache_reg = NULL;
+	}
+}
+#endif
+
 static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 {
 	atomic_set(&mm->mm_users, 1);
@@ -539,6 +569,9 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 	spin_lock_init(&mm->page_table_lock);
 	mm_init_aio(mm);
 	mm_init_owner(mm, p);
+#ifdef CONFIG_MM_OPT
+	mm_alloc_domain(mm);
+#endif
 	clear_tlb_flush_pending(mm);
 
 	if (current->mm) {
@@ -603,6 +636,9 @@ void __mmdrop(struct mm_struct *mm)
 	destroy_context(mm);
 	mmu_notifier_mm_destroy(mm);
 	check_mm(mm);
+#ifdef CONFIG_MM_OPT
+	mm_destroy_domain(mm);
+#endif
 	free_mm(mm);
 }
 EXPORT_SYMBOL_GPL(__mmdrop);

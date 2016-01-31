@@ -1061,6 +1061,10 @@ void __init mem_init(void)
 	mem_init_print_info(NULL);
 #ifdef CONFIG_PRINT_BUDDY_FREELIST
 	print_buddy_freelist();
+#ifdef CONFIG_MM_OPT
+	post_zone_init();
+	print_buddy_freelist();
+#endif
 #endif
 }
 

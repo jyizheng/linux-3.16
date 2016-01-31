@@ -11,7 +11,7 @@ ROOT="root=/dev/hda rw --no-log"
 
 set -x
 
-qemu-system-x86_64 -smp 2 -m 2G \
+qemu-system-x86_64 -smp 4 -m 4G \
     -hda ./linuxdisk.raw \
     -hdb ./ftfs-southbound.raw \
     -kernel ../arch/x86/boot/bzImage \

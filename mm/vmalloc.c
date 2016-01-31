@@ -1310,6 +1310,22 @@ static void clear_vm_uninitialized_flag(struct vm_struct *vm)
 	vm->flags &= ~VM_UNINITIALIZED;
 }
 
+#ifdef CONFIG_MM_OPT
+static void vmalloc_alloc_domain(struct vm_struct *area)
+{
+	struct mm_domain *dom;
+	
+	BUG_ON(area == NULL);
+	dom = &area->vmalloc_domain;
+
+	if (dom != NULL) {
+		INIT_LIST_HEAD(&dom->domlist_head);
+		dom->size = 0;
+		dom->cache_reg = NULL;
+	}
+}
+#endif
+
 static struct vm_struct *__get_vm_area_node(unsigned long size,
 		unsigned long align, unsigned long flags, unsigned long start,
 		unsigned long end, int node, gfp_t gfp_mask, const void *caller)
@@ -1328,6 +1344,10 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 	area = kzalloc_node(sizeof(*area), gfp_mask & GFP_RECLAIM_MASK, node);
 	if (unlikely(!area))
 		return NULL;
+
+#ifdef CONFIG_MM_OPT
+	vmalloc_alloc_domain(area);
+#endif
 
 	/*
 	 * We always allocate a guard page.
@@ -1590,12 +1610,17 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 	for (i = 0; i < area->nr_pages; i++) {
 		struct page *page;
 		gfp_t tmp_mask = gfp_mask | __GFP_NOWARN;
-
+#ifdef CONFIG_MM_OPT
+		if (node == NUMA_NO_NODE)
+			page = alloc_page_vmalloc(tmp_mask);
+		else
+			page = alloc_pages_node_vmalloc(node, tmp_mask, order);
+#else
 		if (node == NUMA_NO_NODE)
 			page = alloc_page(tmp_mask);
 		else
 			page = alloc_pages_node(node, tmp_mask, order);
-
+#endif
 		if (unlikely(!page)) {
 			/* Successfully allocated i pages, free them in __vunmap() */
 			area->nr_pages = i;

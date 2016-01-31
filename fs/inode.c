@@ -114,6 +114,43 @@ int proc_nr_inodes(struct ctl_table *table, int write,
 }
 #endif
 
+#ifdef CONFIG_MM_OPT
+void inode_destroy_domain(struct inode *inode)
+{
+	struct address_space *mapping = &inode->i_data;
+	struct mm_domain *dom = mapping->file_domain;
+	struct mm_region *reg, *next;
+
+	BUG_ON(mapping->nrpages != 0);
+	if (dom->size == 0)
+		goto free;
+	pr_info("domain size:%d\n", dom->size);
+	list_for_each_entry_safe(reg, next, &dom->domlist_head, domlist) {
+		pr_info("reg freesize:%d\n", reg->freesize);
+		pr_info("reg index:%d\n", reg->index);
+		if (reg->freesize == reg->index)
+			free_mm_region(reg); 
+	}
+free:
+	kfree(dom);
+	return;
+}
+
+void inode_alloc_domain(struct inode *inode)
+{
+	struct address_space *mapping = &inode->i_data;
+
+	BUG_ON(mapping == NULL);
+	mapping->file_domain = (struct mm_domain *)
+				kmalloc(sizeof(struct mm_domain), GFP_KERNEL);
+	if (mapping->file_domain != NULL) {
+		INIT_LIST_HEAD(&mapping->file_domain->domlist_head);
+		mapping->file_domain->size = 0;
+		mapping->file_domain->cache_reg = NULL;
+	}
+}
+#endif
+
 /**
  * inode_init_always - perform inode structure intialisation
  * @sb: superblock inode belongs to
@@ -169,7 +206,9 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
 	mapping->private_data = NULL;
 	mapping->backing_dev_info = &default_backing_dev_info;
 	mapping->writeback_index = 0;
-
+#ifdef CONFIG_MM_OPT
+	inode_alloc_domain(inode);
+#endif
 	/*
 	 * If the block_device provides a backing_dev_info for client
 	 * inodes then use that.  Otherwise the inode share the bdev's
@@ -259,6 +298,9 @@ static void destroy_inode(struct inode *inode)
 {
 	BUG_ON(!list_empty(&inode->i_lru));
 	__destroy_inode(inode);
+#ifdef CONFIG_MM_OPT
+	inode_destroy_domain(inode);
+#endif
 	if (inode->i_sb->s_op->destroy_inode)
 		inode->i_sb->s_op->destroy_inode(inode);
 	else

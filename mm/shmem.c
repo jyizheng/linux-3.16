@@ -35,6 +35,10 @@
 
 static struct vfsmount *shm_mnt;
 
+#ifdef CONFIG_MM_OPT
+#include <linux/pagemap.h>
+#endif
+
 #ifdef CONFIG_SHMEM
 /*
  * This virtual memory filesystem is heavily based on the ramfs. It
@@ -906,7 +910,13 @@ static inline struct page *shmem_swapin(swp_entry_t swap, gfp_t gfp,
 static inline struct page *shmem_alloc_page(gfp_t gfp,
 			struct shmem_inode_info *info, pgoff_t index)
 {
+#ifdef CONFIG_MM_OPT
+	struct address_space *x = (&info->vfs_inode)->i_mapping;
+
+	return __page_cache_alloc_mm_opt(gfp, x);
+#else
 	return alloc_page(gfp);
+#endif
 }
 #endif /* CONFIG_NUMA */
 

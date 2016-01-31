@@ -34,6 +34,13 @@ struct vm_area_struct;
 #define ___GFP_NO_KSWAPD	0x400000u
 #define ___GFP_OTHER_NODE	0x800000u
 #define ___GFP_WRITE		0x1000000u
+
+#ifdef CONFIG_MM_OPT
+#define ___GFP_FILE_CACHE	0x2000000u
+#define ___GFP_VM_PAGE		0x4000000u
+#define ___GFP_READONLY		0x8000000u
+#endif
+
 /* If the above are modified, __GFP_BITS_SHIFT may need updating */
 
 /*
@@ -91,13 +98,24 @@ struct vm_area_struct;
 #define __GFP_OTHER_NODE ((__force gfp_t)___GFP_OTHER_NODE) /* On behalf of other node */
 #define __GFP_WRITE	((__force gfp_t)___GFP_WRITE)	/* Allocator intends to dirty page */
 
+#ifdef CONFIG_MM_OPT
+#define __GFP_FILE_CACHE ((__force gfp_t)___GFP_FILE_CACHE)
+#define __GFP_VM_PAGE ((__force gfp_t)___GFP_VM_PAGE)
+#define __GFP_READONLY ((__force gfp_t)___GFP_READONLY)
+#endif
+
 /*
  * This may seem redundant, but it's a way of annotating false positives vs.
  * allocations that simply cannot be supported (e.g. page tables).
  */
 #define __GFP_NOTRACK_FALSE_POSITIVE (__GFP_NOTRACK)
 
+#ifdef CONFIG_MM_OPT
+#define __GFP_BITS_SHIFT 26	/* Room for N __GFP_FOO bits */
+#else
 #define __GFP_BITS_SHIFT 25	/* Room for N __GFP_FOO bits */
+#endif
+
 #define __GFP_BITS_MASK ((__force gfp_t)((1 << __GFP_BITS_SHIFT) - 1))
 
 /* This equals 0, but use constants in case they ever change */
@@ -341,9 +359,17 @@ extern struct page *alloc_pages_vma(gfp_t gfp_mask, int order,
 #else
 #define alloc_pages(gfp_mask, order) \
 		alloc_pages_node(numa_node_id(), gfp_mask, order)
+#ifdef CONFIG_MM_OPT
+extern struct page *alloc_pages_vma_mm_opt(gfp_t gfp_mask, int order,
+			struct vm_area_struct *vma, unsigned long addr);
+#define alloc_pages_vma(gfp_mask, order, vma, addr, node)	\
+	alloc_pages_vma_mm_opt(gfp_mask, order, vma, addr)
+#else /* !MM_OPT */
 #define alloc_pages_vma(gfp_mask, order, vma, addr, node)	\
 	alloc_pages(gfp_mask, order)
+#endif /* MM_OPT */
 #endif
+
 #define alloc_page(gfp_mask) alloc_pages(gfp_mask, 0)
 #define alloc_page_vma(gfp_mask, vma, addr)			\
 	alloc_pages_vma(gfp_mask, 0, vma, addr, numa_node_id())

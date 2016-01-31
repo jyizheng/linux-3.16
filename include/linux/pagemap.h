@@ -26,6 +26,9 @@ enum mapping_flags {
 	AS_UNEVICTABLE	= __GFP_BITS_SHIFT + 3,	/* e.g., ramdisk, SHM_LOCK */
 	AS_BALLOON_MAP  = __GFP_BITS_SHIFT + 4, /* balloon page special map */
 	AS_EXITING	= __GFP_BITS_SHIFT + 5, /* final truncate in progress */
+#ifdef CONFIG_MM_OPT
+	AS_READONLY	= __GFP_BITS_SHIFT + 6,	/* read-only pages */
+#endif
 };
 
 static inline void mapping_set_error(struct address_space *mapping, int error)
@@ -236,20 +239,38 @@ static inline struct page *__page_cache_alloc(gfp_t gfp)
 }
 #endif
 
+#ifdef CONFIG_MM_OPT
+extern struct page *__page_cache_alloc_mm_opt(gfp_t gfp,
+			struct address_space *x);
+#endif
+
 static inline struct page *page_cache_alloc(struct address_space *x)
 {
+#ifdef CONFIG_MM_OPT
+	return __page_cache_alloc_mm_opt(mapping_gfp_mask(x), x);
+#else
 	return __page_cache_alloc(mapping_gfp_mask(x));
+#endif
 }
 
 static inline struct page *page_cache_alloc_cold(struct address_space *x)
 {
+#ifdef CONFIG_MM_OPT
+	return __page_cache_alloc_mm_opt(mapping_gfp_mask(x)|__GFP_COLD, x);
+#else
 	return __page_cache_alloc(mapping_gfp_mask(x)|__GFP_COLD);
+#endif
 }
 
 static inline struct page *page_cache_alloc_readahead(struct address_space *x)
 {
+#ifdef CONFIG_MM_OPT
+	return __page_cache_alloc_mm_opt(mapping_gfp_mask(x) |
+				  __GFP_COLD | __GFP_NORETRY | __GFP_NOWARN, x);
+#else
 	return __page_cache_alloc(mapping_gfp_mask(x) |
 				  __GFP_COLD | __GFP_NORETRY | __GFP_NOWARN);
+#endif
 }
 
 typedef int filler_t(void *, struct page *);

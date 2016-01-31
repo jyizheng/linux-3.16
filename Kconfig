@@ -15,7 +15,7 @@ config PRINT_BUDDY_FREELIST
 
 config FORCE_MAX_ZONEORDER
 	int "MAX_ZONEORDER"
-	default 11
+	default 15
 
 config MM_OPT
 	bool "memory management opt"

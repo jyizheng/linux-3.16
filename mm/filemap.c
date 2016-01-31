@@ -46,6 +46,10 @@
 
 #include <asm/mman.h>
 
+#ifdef CONFIG_MM_OPT
+#include <linux/pagemap.h>
+#endif
+
 /*
  * Shared mappings implemented 30.11.1994. It's not fully working yet,
  * though.
@@ -1852,6 +1856,10 @@ int filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	loff_t size;
 	int ret = 0;
 
+#ifdef CONFIG_MM_OPT
+	if ((vma->vm_flags & VM_EXEC) && (vma->vm_flags & VM_DENYWRITE))
+		set_bit(AS_READONLY, &mapping->flags);
+#endif
 	size = round_up(i_size_read(inode), PAGE_CACHE_SIZE);
 	if (offset >= size >> PAGE_CACHE_SHIFT)
 		return VM_FAULT_SIGBUS;

@@ -23,6 +23,16 @@
 extern void print_buddy_freelist(void);
 #endif
 
+#ifdef CONFIG_MM_OPT
+extern int zygote_pid;
+extern void post_zone_init(void);
+extern void free_mm_region(struct mm_region *reg);
+int compact_file_sysctl_handler(struct ctl_table *, int,
+		void __user *, size_t *, loff_t *);
+int compact_vm_sysctl_handler(struct ctl_table *, int,
+		void __user *, size_t *, loff_t *);
+#endif
+
 struct mempolicy;
 struct anon_vma;
 struct anon_vma_chain;
