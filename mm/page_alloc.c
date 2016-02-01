@@ -1382,7 +1382,7 @@ static struct page *__rmqueue_vm_bank(struct zone *zone, unsigned int order)
 	page = __rmqueue_smallest_vm(zone, order, bid);
 	spin_unlock(&zone->free_bank_vm[bid].lock);
 
-	pr_info("alloc from vm bank: %d, page:%p\n", bid, page);
+	pr_info("alloc from vm bank: %d, page:%p, order:%u\n", bid, page, order);
 	return page;
 }
 #endif
@@ -1849,9 +1849,13 @@ void free_hot_cold_page(struct page *page, bool cold)
 
 #ifdef CONFIG_MM_OPT
 	if (is_region) {
-		unsigned long pfn1 = page_to_pfn(page->reg->head);
-		unsigned long pfn2 = page_to_pfn(page);
-		int size = page->reg->size;
+		unsigned long pfn1;
+		unsigned long pfn2;
+		int size;
+
+		pfn1 = page_to_pfn(page->reg->head);
+		pfn2 = page_to_pfn(page);
+		size = page->reg->size;
 
 		if (pfn2 >= pfn1 && pfn2 <= (pfn1 + size - 1)) {
 			mm_region_free_page(page);

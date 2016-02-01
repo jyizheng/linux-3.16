@@ -1,20 +1,42 @@
 #!/bin/bash
 
-if [ "$1" = "-serial" ]; then
-	[ -f console.log ] && mv console.log console-last.log
-	SERIAL_APPEND="console=\"ttyS0,115200\""
-	SERIAL="-serial file:console.log"
-fi
+HDA=linuxdisk.raw
+HDB=ftfs-southbound.raw
+
+while [ "$1" != "" ];
+do
+	case $1 in
+	-hda)
+		shift
+		HDA="$1"
+		;;
+	-gdb)
+		GDB="-s"
+		;;
+	-serial)
+		[ -f console.log ] && mv console.log console-last.log
+		SERIAL_APPEND="console=\"ttyS0,115200\""
+		SERIAL="-serial file:console.log"
+		;;
+	-selinux)
+		SECURITY_APPEND="selinux=1 security=selinux"
+		INITRD="initrd.img-selinux"
+		;;
+	-noselinux)
+		SECURITY_APPEND="selinux=0"
+		;;
+	-apparmor)
+		SECURITY_APPEND="apparmor=1 security=apparmor"
+		;;
+	esac
+	shift
+done
 
 CONSOLE="console=tty1 highres=off $SERIAL_APPEND"
 ROOT="root=/dev/hda rw --no-log"
 
 set -x
-
-qemu-system-x86_64 -smp 4 -m 4G \
-    -hda ./linuxdisk.raw \
-    -hdb ./ftfs-southbound.raw \
-    -kernel ../arch/x86/boot/bzImage \
-	-append "$CONSOLE $ROOT" \
-	-curses -s $SERIAL
-
+ 
+qemu-system-x86_64 $GDB -m 4G -smp 1 -hda $HDA -hdb $HDB -kernel ../arch/x86/boot/bzImage \
+	-append "$CONSOLE $ROOT $SECURITY_APPEND" \
+	-curses -snapshot $SERIAL
