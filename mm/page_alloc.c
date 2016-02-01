@@ -99,169 +99,10 @@ out:
 EXPORT_SYMBOL(print_buddy_freelist);
 #endif
 
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
-static int page_inside_file_area(struct page *page)
-{
-	struct zone *zone = page_zone(page);
-	unsigned int *start_pfn = zone->file_start_pfn;
-	unsigned int size = zone->nr_file_bank;
-	unsigned long nr_pages = 1 << (MAX_ORDER - 1);
-	unsigned long pfn1 = page_to_pfn(page);
-	int i;
-
-	for (i = 0; i < size; i++)
-		if (pfn1 >= start_pfn[i] &&
-	     	    pfn1 <= start_pfn[i] + nr_pages - 1)
-			return i;
-	return -1;
-}
-
-static void reserve_file_free_area(struct zone *zone,
-		unsigned long reserved)
-{
-	int i, k;
-	unsigned int t = MIGRATE_MOVABLE;
-	unsigned int order = MAX_ORDER - 1;
-	struct list_head *list = &zone->free_area[order].free_list[t];
-
-	/* Initialize free_area for file cache */
-	for (k = 0; k < ZONE_MAX_FILE_BANK; k++) {
-		for (i = 0; i < MAX_ORDER; i++) {
-			struct free_area *area = zone->free_bank_file[k].free_area;
-
-			INIT_LIST_HEAD(&area[i].free_list[t]);
-			area[i].nr_free = 0;
-		}
-		spin_lock_init(&zone->free_bank_file[k].lock);
-		zone->file_start_pfn[k] = 0;
-		zone->free_bank_file[k].ext_rb = RB_ROOT;
-	}
-
-	zone->nr_file_bank = 0;
-	if (reserved <= 0)
-		return;
-	if (reserved > ZONE_MAX_FILE_BANK)
-		reserved = ZONE_MAX_FILE_BANK;
-	zone->nr_file_bank = reserved;
-
-	for (i = 0; i < reserved; i++) {
-		struct page *page = list_entry(list->next, struct page, lru);
-		struct free_area *area = zone->free_bank_file[i].free_area;
-
-		pr_info("file bank:%lx\n", page_to_pfn(page));
-		list_del(&page->lru);
-		zone->free_area[order].nr_free--;
-
-		list_add(&page->lru, &area[order].free_list[t]);
-		area[order].nr_free++;
-		zone->file_start_pfn[i] = page_to_pfn(page);
-	}
-}
-#else
-static void reserve_file_free_area(struct zone *zone,
-		unsigned long reserved)
-{
-	return;
-}
-#endif
-
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
-static int page_inside_vm_area(struct page *page)
-{
-	struct zone *zone = page_zone(page);
-	unsigned int *start_pfn = zone->vm_start_pfn;
-	unsigned int size = zone->nr_vm_bank;
-	unsigned long nr_pages = 1 << (MAX_ORDER - 1);
-	unsigned long pfn1 = page_to_pfn(page);
-	int i;
-	
-	for (i = 0; i < size; i++)
-		if (pfn1 >= start_pfn[i] &&
-	     	    pfn1 <= start_pfn[i] + nr_pages - 1)
-			return i;
-	return -1;
-}
-
-static void reserve_vm_free_area(struct zone *zone,
-		unsigned long reserved)
-{
-	int i;
-	int k;
-	unsigned int t = MIGRATE_MOVABLE;
-	unsigned int order = MAX_ORDER - 1;
-	struct list_head *list = &zone->free_area[order].free_list[t];
-
-	/* Initialize free_area for process vm */
-	for (k = 0; k < ZONE_MAX_VM_BANK; k++) {
-		for (i = 0; i < MAX_ORDER; i++) {
-			struct free_area *area = zone->free_bank_vm[k].free_area;
-
-			INIT_LIST_HEAD(&area[i].free_list[t]);
-			area[i].nr_free = 0;
-		}
-		spin_lock_init(&zone->free_bank_vm[k].lock);
-		zone->vm_start_pfn[k] = 0;
-		zone->free_bank_vm[k].ext_rb = RB_ROOT;
-	}
-
-	zone->nr_vm_bank = 0;
-	if (reserved <= 0)
-		return;
-	if (reserved > ZONE_MAX_VM_BANK)
-		reserved = ZONE_MAX_VM_BANK;
-	zone->nr_vm_bank = reserved;
-
-	for (i = 0; i < reserved; i++) {
-		struct page *page = list_entry(list->next, struct page, lru);
-		struct free_area *area = zone->free_bank_vm[i].free_area;
-
-		pr_info("vm bank:%lx\n", page_to_pfn(page));
-		list_del(&page->lru);
-		zone->free_area[order].nr_free--;
-
-		list_add(&page->lru, &area[order].free_list[t]);
-		area[order].nr_free++;
-		zone->vm_start_pfn[i] = page_to_pfn(page);
-	}
-}
-#else
-static void reserve_vm_free_area(struct zone *zone,
-		unsigned long reserved)
-{
-	return;
-}
-#endif
-
 #if defined(CONFIG_MM_OPT)
 void post_zone_init(void)
 {
-	struct zone *zone;
-	struct list_head *list;
-	struct list_head *curr;
-	unsigned int nr_bank;
-	unsigned int reserved;
-	unsigned int t = MIGRATE_MOVABLE;
-	unsigned int order = MAX_ORDER - 1;
-
-	for_each_zone(zone) {
-		if (zone->present_pages == 0)
-			continue;
-		list = &zone->free_area[order].free_list[t];
-		if (list_empty(list))
-			continue;
-
-		nr_bank = 0;
-		list_for_each(curr, list)
-			nr_bank++;
-		zone->nr_free_bank = nr_bank;
-		reserved = DIV_ROUND_UP(nr_bank, 3);
-		reserve_file_free_area(zone, reserved);
-
-		if (!list_empty(list)) {
-			reserved = DIV_ROUND_UP(nr_bank, 3);
-			reserve_vm_free_area(zone, reserved);
-		}
-	}
+	pr_info("post_zone_init is called\n");
 }
 EXPORT_SYMBOL(post_zone_init);
 #endif
@@ -835,80 +676,6 @@ out:
 	zone->free_area[order].nr_free++;
 }
 
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
-static inline void __free_one_file_page(struct page *page,
-		struct zone *zone, unsigned int order, int bid)
-{
-	unsigned long page_idx;
-	unsigned long combined_idx;
-	unsigned long uninitialized_var(buddy_idx);
-	struct page *buddy;
-	int migratetype = MIGRATE_MOVABLE;
-
-	page_idx = page_to_pfn(page) & ((1 << MAX_ORDER) - 1);
-
-	VM_BUG_ON(page_idx & ((1 << order) - 1));
-	VM_BUG_ON(bad_range(zone, page));
-
-	spin_lock(&zone->free_bank_file[bid].lock);
-	while (order < MAX_ORDER-1) {
-		buddy_idx = __find_buddy_index(page_idx, order);
-		buddy = page + (buddy_idx - page_idx);
-		if (!page_is_buddy(page, buddy, order))
-			break;
-		list_del(&buddy->lru);
-		zone->free_bank_file[bid].free_area[order].nr_free--;
-		rmv_page_order(buddy);
-		combined_idx = buddy_idx & page_idx;
-		page = page + (combined_idx - page_idx);
-		page_idx = combined_idx;
-		order++;
-	}
-
-	set_page_order(page, order);
-	list_add(&page->lru, &zone->free_bank_file[bid].free_area[order].free_list[migratetype]);
-	zone->free_bank_file[bid].free_area[order].nr_free++;
-	spin_unlock(&zone->free_bank_file[bid].lock);
-}
-#endif
-
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
-static inline void __free_one_vm_page(struct page *page,
-		struct zone *zone, unsigned int order, int bid)
-{
-	unsigned long page_idx;
-	unsigned long combined_idx;
-	unsigned long uninitialized_var(buddy_idx);
-	struct page *buddy;
-	int migratetype = MIGRATE_MOVABLE;
-
-	page_idx = page_to_pfn(page) & ((1 << MAX_ORDER) - 1);
-
-	VM_BUG_ON(page_idx & ((1 << order) - 1));
-	VM_BUG_ON(bad_range(zone, page));
-
-	spin_lock(&zone->free_bank_vm[bid].lock);
-	while (order < MAX_ORDER-1) {
-		buddy_idx = __find_buddy_index(page_idx, order);
-		buddy = page + (buddy_idx - page_idx);
-		if (!page_is_buddy(page, buddy, order))
-			break;
-		list_del(&buddy->lru);
-		zone->free_bank_vm[bid].free_area[order].nr_free--;
-		rmv_page_order(buddy);
-		combined_idx = buddy_idx & page_idx;
-		page = page + (combined_idx - page_idx);
-		page_idx = combined_idx;
-		order++;
-	}
-
-	set_page_order(page, order);
-	list_add(&page->lru, &zone->free_bank_vm[bid].free_area[order].free_list[migratetype]);
-	zone->free_bank_vm[bid].free_area[order].nr_free++;
-	spin_unlock(&zone->free_bank_vm[bid].lock);
-}
-#endif
-
 static inline int free_pages_check(struct page *page)
 {
 	const char *bad_reason = NULL;
@@ -1004,36 +771,10 @@ static void free_one_page(struct zone *zone,
 				unsigned int order,
 				int migratetype)
 {
-#ifdef CONFIG_MM_OPT
-	int bid = -1;
-#endif
-
 	spin_lock(&zone->lock);
 	zone->pages_scanned = 0;
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
-	bid = page_inside_vm_area(page);
-	if (bid != -1) {
-		pr_info("free to vm bank:%d order:%d\n", bid, order);
-		__free_one_vm_page(page, zone, order, bid);
-	}
-#endif
-	
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
-	if (bid == -1) {
-		bid = page_inside_file_area(page);
-		if (bid != -1) {
-			pr_info("free to file bank:%d order:%d\n", bid, order);
-			__free_one_file_page(page, zone, order, bid);
-		}
-	}
-#endif
 
-#if defined(CONFIG_MM_OPT)
-	if (bid == -1)
-		__free_one_page(page, pfn, zone, order, migratetype);
-#else
 	__free_one_page(page, pfn, zone, order, migratetype);
-#endif
 	if (unlikely(!is_migrate_isolate(migratetype)))
 		__mod_zone_freepage_state(zone, 1 << order, migratetype);
 	spin_unlock(&zone->lock);
@@ -1265,127 +1006,6 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 
 	return NULL;
 }
-
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
-static inline struct page *__rmqueue_smallest_file(struct zone *zone,
-	unsigned int order, int bid)
-{
-	unsigned int current_order;
-	struct free_area * area;
-	struct page *page;
-	int migratetype = MIGRATE_MOVABLE;
-
-	/* Find a page of the appropriate size in the preferred list */
-	for (current_order = order; current_order < MAX_ORDER; ++current_order) {
-		area = &(zone->free_bank_file[bid].free_area[current_order]);
-		if (list_empty(&area->free_list[migratetype]))
-			continue;
-
-		page = list_entry(area->free_list[migratetype].next,
-							struct page, lru);
-		list_del(&page->lru);
-		rmv_page_order(page);
-		area->nr_free--;
-		expand(zone, page, order, current_order, area, migratetype);
-		return page;
-	}
-	return NULL;
-}
-
-struct page *test_file_bank_alloc(unsigned int order, gfp_t gfp_mask)
-{
-	int bid = 2;
-	struct page *page;
-	struct zone *zone;
-	
-	for_each_zone(zone) {
-		if (strcmp(zone->name, "Normal") == 0)
-			break;
-	}
-
-	spin_lock(&zone->free_bank_file[bid].lock);
-	page = __rmqueue_smallest_file(zone, order, bid);
-	spin_unlock(&zone->free_bank_file[bid].lock);
-
-	return page;
-}
-EXPORT_SYMBOL(test_file_bank_alloc);
-
-static struct page *__rmqueue_file_bank(struct zone *zone,
-		unsigned int order, gfp_t gfp_mask)
-{
-	int pid = current->pid;
-	unsigned int nr_file_bank = zone->nr_file_bank;
-	struct page *page;
-	int bid;
-	int tmp;
-
-	if (nr_file_bank == 0)
-		return NULL;
-	BUG_ON(!slab_is_available());	
-
-	tmp = DIV_ROUND_UP(nr_file_bank, 2);
-	if (tmp == 0)
-		bid = pid % nr_file_bank;
-	else if (gfp_mask & __GFP_READONLY)
-		bid = pid % tmp;
-	else
-		bid = pid % (nr_file_bank - tmp) + tmp;
-
-	spin_lock(&zone->free_bank_file[bid].lock);
-	page = __rmqueue_smallest_file(zone, order, bid);
-	spin_unlock(&zone->free_bank_file[bid].lock);
-
-	pr_info("alloc from file bank: %d, page:%p\n", bid, page);
-	return page;
-}
-#endif
-
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
-static inline struct page *__rmqueue_smallest_vm(struct zone *zone,
-		unsigned int order, int bid)
-{
-	unsigned int current_order;
-	struct free_area * area;
-	struct page *page;
-	int migratetype = MIGRATE_MOVABLE;
-
-	/* Find a page of the appropriate size in the preferred list */
-	for (current_order = order; current_order < MAX_ORDER; ++current_order) {
-		area = &(zone->free_bank_vm[bid].free_area[current_order]);
-		if (list_empty(&area->free_list[migratetype]))
-			continue;
-		page = list_entry(area->free_list[migratetype].next,
-							struct page, lru);
-		list_del(&page->lru);
-		rmv_page_order(page);
-		area->nr_free--;
-		expand(zone, page, order, current_order, area, migratetype);
-		return page;
-	}
-	return NULL;
-}
-
-static struct page *__rmqueue_vm_bank(struct zone *zone, unsigned int order)
-{
-	int pid = current->pid;
-	int nr_vm_bank = zone->nr_vm_bank;
-	struct page *page;
-	int bid;
-
-	if (zone->nr_vm_bank == 0)
-		return NULL;
-	BUG_ON(!slab_is_available());
-	bid = pid % nr_vm_bank;
-
-	spin_lock(&zone->free_bank_vm[bid].lock);
-	page = __rmqueue_smallest_vm(zone, order, bid);
-	spin_unlock(&zone->free_bank_vm[bid].lock);
-
-	pr_info("alloc from vm bank: %d, page:%p, order:%u\n", bid, page, order);
-	return page;
-}
-#endif
 
 /*
  * This array describes the order lists are fallen back to when
@@ -2046,29 +1666,9 @@ again:
 			 */
 			WARN_ON_ONCE(order > 1);
 		}
-#if defined(CONFIG_MM_OPT)
-		page = NULL;
-		local_irq_save(flags);
-#if defined(CONFIG_MM_OPT_FILE)
-		if ((gfp_flags & __GFP_FILE_CACHE) && (order > 0))
-			page = __rmqueue_file_bank(zone, order, gfp_flags);
-#endif
-
-#if defined(CONFIG_MM_OPT_VM)
-		if ((gfp_flags & __GFP_VM_PAGE) && (order > 0))
-			page = __rmqueue_vm_bank(zone, order);
-#endif
-	
-		if (page == NULL) {
-			spin_lock(&zone->lock);
-			page = __rmqueue(zone, order, migratetype);
-			spin_unlock(&zone->lock);
-		}
-#else
 		spin_lock_irqsave(&zone->lock, flags);
 		page = __rmqueue(zone, order, migratetype);
 		spin_unlock(&zone->lock);
-#endif
 		if (!page)
 			goto failed;
 		__mod_zone_freepage_state(zone, -(1 << order),

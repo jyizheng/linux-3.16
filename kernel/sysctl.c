@@ -113,14 +113,6 @@ extern int sysctl_nr_open_min, sysctl_nr_open_max;
 extern int sysctl_nr_trim_pages;
 #endif
 
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
-extern int sysctl_compact_vm;
-#endif
-
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
-extern int sysctl_compact_file;
-#endif
-
 /* Constants used for minimum and  maximum */
 #ifdef CONFIG_LOCKUP_DETECTOR
 static int sixty = 60;
@@ -1302,24 +1294,6 @@ static struct ctl_table vm_table[] = {
 		.extra1		= &one,
 		.extra2		= &four,
 	},
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
-	{
-		.procname	= "compact_vm",
-		.data		= &sysctl_compact_vm,
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.proc_handler	= compact_vm_sysctl_handler,
-	},
-#endif
-#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
-	{
-		.procname	= "compact_file",
-		.data		= &sysctl_compact_file,
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.proc_handler	= compact_file_sysctl_handler,
-	},
-#endif
 #ifdef CONFIG_COMPACTION
 	{
 		.procname	= "compact_memory",
@@ -1337,7 +1311,6 @@ static struct ctl_table vm_table[] = {
 		.extra1		= &min_extfrag_threshold,
 		.extra2		= &max_extfrag_threshold,
 	},
-
 #endif /* CONFIG_COMPACTION */
 	{
 		.procname	= "min_free_kbytes",
