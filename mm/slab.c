@@ -2079,8 +2079,11 @@ static size_t calculate_slab_order(struct kmem_cache *cachep,
 	unsigned long offslab_limit;
 	size_t left_over = 0;
 	int gfporder;
-
+#if defined(CONFIG_MM_OPT_SLAB) && defined(CONFIG_MM_OPT)
+	for (gfporder = 1; gfporder <= KMALLOC_MAX_ORDER; gfporder++) {
+#else
 	for (gfporder = 0; gfporder <= KMALLOC_MAX_ORDER; gfporder++) {
+#endif
 		unsigned int num;
 		size_t remainder;
 

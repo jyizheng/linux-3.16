@@ -2789,7 +2789,7 @@ got_pg:
  */
 struct page *
 __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
-			struct zonelist *zonelist, nodemask_t *nodemask)
+		struct zonelist *zonelist, nodemask_t *nodemask)
 {
 	enum zone_type high_zoneidx = gfp_zone(gfp_mask);
 	struct zone *preferred_zone;
@@ -2801,8 +2801,18 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	int classzone_idx;
 
 #ifdef CONFIG_MM_OPT
-	gfp_mask &= (gfp_allowed_mask | __GFP_FILE_CACHE
-			| __GFP_VM_PAGE	| __GFP_READONLY);
+	gfp_mask &= (gfp_allowed_mask | __GFP_FILE_CACHE |
+			__GFP_VM_PAGE | __GFP_READONLY);
+#ifdef CONFIG_MM_OPT_FILE
+	if (gfp_mask & __GFP_FILE_CACHE)
+		BUG_ON(order == 0);
+#endif
+#ifdef CONFIG_MM_OPT_VM
+	if (gfp_mask & __GFP_VM_PAGE)
+		BUG_ON(order == 0);
+#endif
+	if (order == 0)
+		dump_stack();
 #else
 	gfp_mask &= gfp_allowed_mask;
 #endif
@@ -2869,8 +2879,6 @@ retry:
 				preferred_zone, classzone_idx, migratetype);
 	}
 
-	trace_mm_page_alloc(page, order, gfp_mask, migratetype);
-
 out:
 	/*
 	 * When updating a task's mems_allowed, it is possible to race with
@@ -2907,7 +2915,16 @@ EXPORT_SYMBOL(__get_free_pages);
 
 unsigned long get_zeroed_page(gfp_t gfp_mask)
 {
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_VM)
+	struct page *page;
+
+	page = alloc_pages_vma_mm_opt(gfp_mask | __GFP_ZERO, 0, NULL, 0);
+	if (!page)
+		return 0;
+	return (unsigned long) page_address(page);
+#else
 	return __get_free_pages(gfp_mask | __GFP_ZERO, 0);
+#endif
 }
 EXPORT_SYMBOL(get_zeroed_page);
 

@@ -230,18 +230,22 @@ static inline void page_unfreeze_refs(struct page *page, int count)
 	atomic_set(&page->_count, count);
 }
 
+#if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
+extern struct page *__page_cache_alloc_mm_opt(gfp_t gfp,
+			struct address_space *x);
+#endif
+
 #ifdef CONFIG_NUMA
 extern struct page *__page_cache_alloc(gfp_t gfp);
 #else
 static inline struct page *__page_cache_alloc(gfp_t gfp)
 {
-	return alloc_pages(gfp, 0);
-}
-#endif
-
 #if defined(CONFIG_MM_OPT) && defined(CONFIG_MM_OPT_FILE)
-extern struct page *__page_cache_alloc_mm_opt(gfp_t gfp,
-			struct address_space *x);
+	return __page_cache_alloc_mm_opt(gfp, NULL);
+#else
+	return alloc_pages(gfp, 0);
+#endif
+}
 #endif
 
 static inline struct page *page_cache_alloc(struct address_space *x)

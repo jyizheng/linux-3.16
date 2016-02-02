@@ -15,7 +15,7 @@ config PRINT_BUDDY_FREELIST
 
 config FORCE_MAX_ZONEORDER
 	int "MAX_ZONEORDER"
-	default 15
+	default 11
 
 config MM_OPT
 	bool "memory management opt"
@@ -27,6 +27,10 @@ config MM_OPT_FILE
 
 config MM_OPT_VM
 	bool "memory management opt for vm"
+	default n
+
+config MM_OPT_SLAB
+	bool "memory management opt for SLAB"
 	default n
 
 config MM_OPT_VMALLOC

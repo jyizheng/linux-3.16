@@ -214,6 +214,21 @@ static struct mm_region *mm_domain_find_region(struct mm_domain *dom,
 }
 
 #ifdef CONFIG_MM_OPT_VM
+static struct mm_domain *g_dom_kern;
+
+static struct mm_domain *get_kern_domain(void)
+{ 
+	if (g_dom_kern == NULL) {
+		g_dom_kern = kmalloc(sizeof(struct mm_domain), GFP_KERNEL);
+		if (g_dom_kern != NULL) {
+			INIT_LIST_HEAD(&g_dom_kern->domlist_head);
+			g_dom_kern->size = 0;
+			g_dom_kern->cache_reg = NULL;
+		}
+	}
+	return g_dom_kern;
+}
+
 /* Hijack virtual process page allocation */
 struct page *alloc_pages_vma_mm_opt(gfp_t gfp_mask, int order,
 		struct vm_area_struct *vma, unsigned long addr)
@@ -224,10 +239,15 @@ struct page *alloc_pages_vma_mm_opt(gfp_t gfp_mask, int order,
 	gfp_t old_gfp_mask;
 	
 	VM_BUG_ON(order != 0);
-	mm = vma->vm_mm;
-	dom = mm->vmdomain;
-	old_gfp_mask = gfp_mask;
-	gfp_mask |= __GFP_VM_PAGE;
+
+	if (vma == NULL) {
+		dom = get_kern_domain();
+	} else {
+		mm = vma->vm_mm;
+		dom = mm->vmdomain;
+		old_gfp_mask = gfp_mask;
+		gfp_mask |= __GFP_VM_PAGE;
+	}
 
 	if (dom->cache_reg == NULL || mm_region_is_full(dom->cache_reg)) {
 		struct mm_region *reg;
@@ -243,12 +263,27 @@ struct page *alloc_pages_vma_mm_opt(gfp_t gfp_mask, int order,
 		goto normal;
 	return page;
 normal:
-	page = alloc_pages(old_gfp_mask, order);
-	return page;
+	pr_info("fallback to original allocation\n");
+	return alloc_pages(old_gfp_mask, order);
 }
 #endif
 
 #ifdef CONFIG_MM_OPT_FILE
+static struct mm_domain *g_dom_buffer;
+
+static struct mm_domain *get_buffer_domain(void)
+{ 
+	if (g_dom_buffer == NULL) {
+		g_dom_buffer = kmalloc(sizeof(struct mm_domain), GFP_KERNEL);
+		if (g_dom_buffer != NULL) {
+			INIT_LIST_HEAD(&g_dom_buffer->domlist_head);
+			g_dom_buffer->size = 0;
+			g_dom_buffer->cache_reg = NULL;
+		}
+	}
+	return g_dom_buffer;
+}
+
 /* Hijack page cache allocation */
 struct page *__page_cache_alloc_mm_opt(gfp_t gfp_mask,
 		struct address_space *x)
@@ -257,15 +292,16 @@ struct page *__page_cache_alloc_mm_opt(gfp_t gfp_mask,
 	struct page *page;
 	gfp_t old_gfp_mask;
 
-	if (x == NULL)
-		goto normal;
+	if (x == NULL) {
+		dom = get_buffer_domain();
+	} else {
+		dom = x->file_domain;
+		old_gfp_mask = gfp_mask;
+		gfp_mask |= __GFP_FILE_CACHE;
 
-	dom = x->file_domain;
-	old_gfp_mask = gfp_mask;
-	gfp_mask |= __GFP_FILE_CACHE;
-
-	if (x->flags & AS_READONLY)
-		gfp_mask |= __GFP_READONLY;
+		if (x->flags & AS_READONLY)
+			gfp_mask |= __GFP_READONLY;
+	}
 	
 	if (dom->cache_reg == NULL || mm_region_is_full(dom->cache_reg)) {
 		struct mm_region *reg;
@@ -281,6 +317,7 @@ struct page *__page_cache_alloc_mm_opt(gfp_t gfp_mask,
 		goto normal;
 	return page;
 normal:
+	pr_info("fallback to original allocation\n");
 	return alloc_pages(old_gfp_mask, 0);
 }
 #endif
